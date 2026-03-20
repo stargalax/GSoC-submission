@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Data Density Heatmap - GraphQL + D3.js</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .tech-stack {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .tech-stack h3 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .tech-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #495057;
+        }
+
+        select,
+        button {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 25px 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .visualization {
+            padding: 40px;
+            overflow-x: auto;
+        }
+
+        .heatmap-container {
+            min-width: 900px;
+        }
+
+        .cell {
+            stroke: white;
+            stroke-width: 3;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cell:hover {
+            stroke: #ff6b6b;
+            stroke-width: 4;
+            filter: brightness(1.1);
+        }
+
+        .axis text {
+            font-size: 14px;
+            fill: #495057;
+            font-weight: 500;
+        }
+
+        .axis-label {
+            font-size: 15px;
+            font-weight: 700;
+            fill: #212529;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 14px 18px;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            border-radius: 10px;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            max-width: 380px;
+            line-height: 1.7;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tooltip-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 80px;
+            font-size: 1.3em;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .code-panel {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .code-panel h3 {
+            color: #61afef;
+            margin-bottom: 15px;
+        }
+
+        .code-line {
+            margin: 5px 0;
+        }
+
+        .keyword {
+            color: #c678dd;
+        }
+
+        .string {
+            color: #98c379;
+        }
+
+        .comment {
+            color: #5c6370;
+            font-style: italic;
+        }
+
+        .function {
+            color: #61afef;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .api-log {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .api-log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #f0e9d2;
+        }
+
+        .api-log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .visualization {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Advanced Data Density Heatmap</h1>
+            <div class="subtitle">Production-Grade GraphQL + D3.js Implementation</div>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="colorScheme">Color Scheme</label>
+                <select id="colorScheme">
+                    <option value="viridis">Viridis (Purple-Yellow)</option>
+                    <option value="plasma">Plasma (Purple-Orange)</option>
+                    <option value="rdylgn">RdYlGn (Red-Yellow-Green)</option>
+                    <option value="blues">Blues (Light-Dark Blue)</option>
+                    <option value="greens">Greens (Light-Dark Green)</option>
+                    <option value="oranges">Oranges (Light-Dark Orange)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="animation">Animation Speed</label>
+                <select id="animation">
+                    <option value="slow">Slow (2000ms)</option>
+                    <option value="medium" selected>Medium (1000ms)</option>
+                    <option value="fast">Fast (500ms)</option>
+                    <option value="none">No Animation</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button onclick="graphQLClient.fetchAndVisualize()" id="analyzeBtn">
+                    🚀 Fetch & Analyze Data
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button onclick="heatmapViz.updateColors()" id="updateBtn" disabled>
+                    🎨 Update Visualization
+                </button>
+            </div>
+        </div>
+
+        <div id="statsPanel" class="stats-panel" style="display: none;"></div>
+
+        <div id="visualization">
+            <div class="loading">
+                <div style="font-size: 4em; margin-bottom: 20px;">🌍</div>
+                <div>Click "Fetch & Analyze Data" to query the GraphQL API</div>
+            </div>
+        </div>
+
+        <div class="code-panel">
+            <h3>📝 GraphQL Query Being Executed:</h3>
+            <pre><code><span class="keyword">query</span> <span class="function">GetContinentalData</span> {
+  continents {
+    name
+    countries {
+      name
+      code
+      capital
+      currency
+      phone
+      languages {
+        name
+      }
+      states {
+        name
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div id="apiLog" class="api-log" style="display: none;">
+            <strong>📡 GraphQL API Console Log:</strong>
+            <div id="apiLogEntries"></div>
+        </div>
+
+        <div class="tech-stack">
+            <h3>🛠️ Technologies Demonstrated</h3>
+            <div class="tech-badges">
+                <span class="badge">GraphQL Client</span>
+                <span class="badge">D3.js v7</span>
+                <span class="badge">JavaScript ES6+</span>
+                <span class="badge">Async/Await</span>
+                <span class="badge">Promise Handling</span>
+                <span class="badge">Data Transformation</span>
+                <span class="badge">DOM Manipulation</span>
+                <span class="badge">SVG Rendering</span>
+                <span class="badge">Color Scales</span>
+                <span class="badge">Interactive Viz</span>
+                <span class="badge">Error Handling</span>
+                <span class="badge">Responsive Design</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // GRAPHQL CLIENT CLASS
+        // ============================================
+        class GraphQLClient {
+            constructor(endpoint) {
+                this.endpoint = endpoint;
+                this.requestCount = 0;
+                this.cache = new Map();
+            }
+
+            /**
+             * Execute a GraphQL query
+             * @param {string} query - GraphQL query string
+             * @param {object} variables - Query variables
+             * @returns {Promise<object>} Query result
+             */
+            async executeQuery(query, variables = {}) {
+                this.logAPI('info', `Executing GraphQL query...`);
+                this.requestCount++;
+
+                const cacheKey = JSON.stringify({ query, variables });
+
+                // Check cache
+                if (this.cache.has(cacheKey)) {
+                    this.logAPI('success', 'Using cached result');
+                    return this.cache.get(cacheKey);
+                }
+
+                try {
+                    const response = await fetch(this.endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ query, variables })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.errors) {
+                        throw new Error(`GraphQL Error: ${result.errors[0].message}`);
+                    }
+
+                    // Cache the result
+                    this.cache.set(cacheKey, result);
+
+                    this.logAPI('success', `Query successful! Fetched ${JSON.stringify(result.data).length} bytes`);
+                    return result;
+
+                } catch (error) {
+                    this.logAPI('error', `Query failed: ${error.message}`);
+                    throw error;
+                }
+            }
+
+            /**
+             * Fetch continental data
+             */
+            async fetchContinentalData() {
+                const query = `
+                    query GetContinentalData {
+                        continents {
+                            name
+                            countries {
+                                name
+                                code
+                                capital
+                                currency
+                                phone
+                                languages {
+                                    name
+                                }
+                                states {
+                                    name
+                                }
+                            }
+                        }
+                    }
+                `;
+
+                return await this.executeQuery(query);
+            }
+
+            /**
+             * Main orchestration method
+             */
+            async fetchAndVisualize() {
+                const btn = document.getElementById('analyzeBtn');
+                const updateBtn = document.getElementById('updateBtn');
+
+                btn.disabled = true;
+                btn.textContent = '🔄 Querying GraphQL API...';
+
+                document.getElementById('visualization').innerHTML =
+                    '<div class="loading"><div class="spinner"></div><div>Executing GraphQL query...</div></div>';
+
+                document.getElementById('apiLog').style.display = 'block';
+
+                try {
+                    // Fetch data
+                    this.logAPI('info', 'Connecting to Countries GraphQL API...');
+                    const result = await this.fetchContinentalData();
+
+                    // Process data
+                    this.logAPI('info', 'Processing continental data...');
+                    const processedData = dataProcessor.process(result.data.continents);
+
+                    // Store globally
+                    window.currentData = processedData;
+
+                    // Update stats
+                    this.logAPI('info', 'Calculating statistics...');
+                    statsPanel.update(result.data.continents, processedData);
+
+                    // Create visualization
+                    this.logAPI('info', 'Rendering D3.js heatmap...');
+                    heatmapViz.create(processedData);
+
+                    this.logAPI('success', `✅ Complete! Analyzed ${result.data.continents.reduce((sum, c) => sum + c.countries.length, 0)} countries`);
+
+                    btn.textContent = '✅ Data Loaded';
+                    updateBtn.disabled = false;
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.logAPI('error', `❌ ${error.message}`);
+
+                    document.getElementById('visualization').innerHTML =
+                        `<div class="loading" style="color: #dc3545;">
+                            <div style="font-size: 3em; margin-bottom: 20px;">❌</div>
+                            <div><strong>Error:</strong> ${error.message}</div>
+                        </div>`;
+
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Try Again';
+                }
+            }
+
+            /**
+             * Log API activity
+             */
+            logAPI(type, message) {
+                const logEntries = document.getElementById('apiLogEntries');
+                const timestamp = new Date().toLocaleTimeString();
+                const entry = document.createElement('div');
+                entry.className = `api-log-entry ${type}`;
+                entry.textContent = `[${timestamp}] ${message}`;
+                logEntries.appendChild(entry);
+
+                // Auto-scroll to bottom
+                const logContainer = document.getElementById('apiLog');
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        }
+
+        // ============================================
+        // DATA PROCESSOR CLASS
+        // ============================================
+        class DataProcessor {
+            /**
+             * Process raw continental data into heatmap format
+             */
+            process(continentsData) {
+                const metrics = [];
+                const metricColumns = [
+                    'Total Countries',
+                    'Avg Languages',
+                    'Data Completeness',
+                    'Capital Coverage',
+                    'Currency Coverage',
+                    'Phone Coverage',
+                    'Language Diversity'
+                ];
+
+                // Calculate for each continent
+                continentsData.forEach(continent => {
+                    const countries = continent.countries;
+                    const totalCountries = countries.length;
+
+                    if (totalCountries === 0) return;
+
+                    // Calculate metrics
+                    const calculations = this.calculateMetrics(countries, totalCountries);
+
+                    // Store raw values
+                    const rawMetrics = {
+                        continent: continent.name,
+                        totalCountries: totalCountries,
+                        avgLanguages: calculations.avgLanguages,
+                        dataCompleteness: calculations.dataCompleteness,
+                        capitalCoverage: calculations.capitalCoverage,
+                        currencyCoverage: calculations.currencyCoverage,
+                        phoneCoverage: calculations.phoneCoverage,
+                        languageDiversity: calculations.languageDiversity
+                    };
+
+                    // Add to metrics array
+                    metricColumns.forEach(metric => {
+                        metrics.push({
+                            continent: continent.name,
+                            metric: metric,
+                            rawValue: rawMetrics[this.toCamelCase(metric)],
+                            normalizedValue: 0
+                        });
+                    });
+                });
+
+                // Normalize values
+                this.normalizeMetrics(metrics, metricColumns);
+
+                return metrics;
+            }
+
+            /**
+             * Calculate all metrics for a set of countries
+             */
+            calculateMetrics(countries, totalCountries) {
+                const avgLanguages = countries.reduce((sum, c) =>
+                    sum + (c.languages ? c.languages.length : 0), 0) / totalCountries;
+
+                const capitalCoverage = (countries.filter(c =>
+                    c.capital && c.capital.trim() !== '').length / totalCountries) * 100;
+
+                const currencyCoverage = (countries.filter(c =>
+                    c.currency && c.currency.trim() !== '').length / totalCountries) * 100;
+
+                const phoneCoverage = (countries.filter(c =>
+                    c.phone && c.phone.trim() !== '').length / totalCountries) * 100;
+
+                const dataCompleteness = (capitalCoverage + currencyCoverage + phoneCoverage) / 3;
+
+                return {
+                    avgLanguages,
+                    capitalCoverage,
+                    currencyCoverage,
+                    phoneCoverage,
+                    dataCompleteness,
+                    languageDiversity: avgLanguages
+                };
+            }
+
+            /**
+             * Normalize metric values to 0-100 scale
+             */
+            normalizeMetrics(metrics, metricColumns) {
+                metricColumns.forEach(metric => {
+                    const metricData = metrics.filter(m => m.metric === metric);
+                    const values = metricData.map(m => m.rawValue);
+                    const min = Math.min(...values);
+                    const max = Math.max(...values);
+                    const range = max - min;
+
+                    metricData.forEach(m => {
+                        if (range === 0) {
+                            m.normalizedValue = 100;
+                        } else {
+                            m.normalizedValue = ((m.rawValue - min) / range) * 100;
+                        }
+                    });
+                });
+            }
+
+            /**
+             * Convert string to camelCase
+             */
+            toCamelCase(str) {
+                return str.replace(/(?:^\w|[A-Z]|\b\w)/g, (letter, index) =>
+                    index === 0 ? letter.toLowerCase() : letter.toUpperCase()
+                ).replace(/\s+/g, '');
+            }
+        }
+
+        // ============================================
+        // STATS PANEL CLASS
+        // ============================================
+        class StatsPanel {
+            update(continentsData, metrics) {
+                const panel = document.getElementById('statsPanel');
+                panel.style.display = 'grid';
+
+                const stats = this.calculateStats(continentsData, metrics);
+
+                panel.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.totalCountries}</div>
+                        <div class="stat-label">Countries Analyzed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.continentCount}</div>
+                        <div class="stat-label">Continents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.avgCompleteness}%</div>
+                        <div class="stat-label">Avg Completeness</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.topContinent}</div>
+                        <div class="stat-label">Highest Quality</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.totalLanguages}</div>
+                        <div class="stat-label">Total Languages</div>
+                    </div>
+                `;
+            }
+
+            calculateStats(continentsData, metrics) {
+                const totalCountries = continentsData.reduce((sum, c) =>
+                    sum + c.countries.length, 0);
+
+                const continentCount = continentsData.filter(c =>
+                    c.countries.length > 0).length;
+
+                const completenessMetrics = metrics.filter(m =>
+                    m.metric === 'Data Completeness');
+                const avgCompleteness = d3.mean(completenessMetrics, m => m.rawValue);
+
+                const topContinent = completenessMetrics.reduce((prev, current) =>
+                    (prev.rawValue > current.rawValue) ? prev : current);
+
+                const totalLanguages = continentsData.reduce((sum, continent) => {
+                    const langs = new Set();
+                    continent.countries.forEach(country => {
+                        if (country.languages) {
+                            country.languages.forEach(lang => langs.add(lang.name));
+                        }
+                    });
+                    return sum + langs.size;
+                }, 0);
+
+                return {
+                    totalCountries,
+                    continentCount,
+                    avgCompleteness: avgCompleteness.toFixed(1),
+                    topContinent: topContinent.continent.split(' ')[0],
+                    totalLanguages
+                };
+            }
+        }
+
+        // ============================================
+        // HEATMAP VISUALIZATION CLASS (D3.js)
+        // ============================================
+        class HeatmapVisualization {
+            constructor() {
+                this.svg = null;
+                this.data = null;
+                this.tooltip = null;
+            }
+
+            /**
+             * Get color interpolator based on selection
+             */
+            getColorScale(scheme) {
+                const scales = {
+                    'viridis': d3.interpolateViridis,
+                    'plasma': d3.interpolatePlasma,
+                    'rdylgn': d3.interpolateRdYlGn,
+                    'blues': d3.interpolateBlues,
+                    'greens': d3.interpolateGreens,
+                    'oranges': d3.interpolateOranges
+                };
+                return scales[scheme] || d3.interpolateViridis;
+            }
+
+            /**
+             * Get animation duration
+             */
+            getAnimationDuration() {
+                const speed = document.getElementById('animation').value;
+                const durations = {
+                    'slow': 2000,
+                    'medium': 1000,
+                    'fast': 500,
+                    'none': 0
+                };
+                return durations[speed] || 1000;
+            }
+
+            /**
+             * Create the heatmap
+             */
+            create(data) {
+                this.data = data;
+
+                // Clear previous
+                d3.select('#visualization').html('');
+
+                const margin = { top: 120, right: 60, bottom: 60, left: 140 };
+                const cellWidth = 100;
+                const cellHeight = 70;
+
+                const continents = [...new Set(data.map(d => d.continent))];
+                const metrics = [...new Set(data.map(d => d.metric))];
+
+                const width = metrics.length * cellWidth + margin.left + margin.right;
+                const height = continents.length * cellHeight + margin.top + margin.bottom;
+
+                // Create SVG
+                this.svg = d3.select('#visualization')
+                    .append('div')
+                    .attr('class', 'heatmap-container')
+                    .append('svg')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                const g = this.svg.append('g')
+                    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+                // Scales
+                const xScale = d3.scaleBand()
+                    .domain(metrics)
+                    .range([0, metrics.length * cellWidth])
+                    .padding(0.05);
+
+                const yScale = d3.scaleBand()
+                    .domain(continents)
+                    .range([0, continents.length * cellHeight])
+                    .padding(0.05);
+
+                const scheme = document.getElementById('colorScheme').value;
+                const colorScale = d3.scaleSequential()
+                    .domain([0, 100])
+                    .interpolator(this.getColorScale(scheme));
+
+                // Create tooltip
+                this.tooltip = d3.select('body')
+                    .append('div')
+                    .attr('class', 'tooltip')
+                    .style('opacity', 0);
+
+                // Draw cells with animation
+                const duration = this.getAnimationDuration();
+
+                g.selectAll('.cell')
+                    .data(data)
+                    .join('rect')
+                    .attr('class', 'cell')
+                    .attr('x', d => xScale(d.metric))
+                    .attr('y', d => yScale(d.continent))
+                    .attr('width', xScale.bandwidth())
+                    .attr('height', yScale.bandwidth())
+                    .attr('rx', 6)
+                    .attr('fill', '#ddd')
+                    .on('mouseover', (event, d) => this.showTooltip(event, d))
+                    .on('mouseout', () => this.hideTooltip())
+                    .on('click', (event, d) => this.cellClicked(d))
+                    .transition()
+                    .duration(duration)
+                    .delay((d, i) => i * 20)
+                    .attr('fill', d => colorScale(d.normalizedValue));
+
+                // Add text labels
+                g.selectAll('.cell-text')
+                    .data(data)
+                    .join('text')
+                    .attr('class', 'cell-text')
+                    .attr('x', d => xScale(d.metric) + xScale.bandwidth() / 2)
+                    .attr('y', d => yScale(d.continent) + yScale.bandwidth() / 2)
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'middle')
+                    .style('fill', d => d.normalizedValue > 50 ? 'white' : '#333')
+                    .style('font-weight', '700')
+                    .style('font-size', '12px')
+                    .style('pointer-events', 'none')
+                    .style('opacity', 0)
+                    .text(d => this.formatCellValue(d.metric, d.rawValue))
+                    .transition()
+                    .duration(duration)
+                    .delay((d, i) => i * 20 + duration / 2)
+                    .style('opacity', 1);
+
+                // Add axes
+                this.addAxes(g, xScale, yScale, metrics, continents);
+
+                // Add title
+                this.svg.append('text')
+                    .attr('x', width / 2)
+                    .attr('y', 30)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '20px')
+                    .style('font-weight', '700')
+                    .style('fill', '#333')
+                    .text('Continental Comparison Matrix - GraphQL Data Analysis');
+
+                // Add legend
+                this.addLegend(this.svg, width, height, margin, colorScale);
+            }
+
+            /**
+             * Update colors only (for scheme changes)
+             */
+            updateColors() {
+                if (!this.data) return;
+
+                const scheme = document.getElementById('colorScheme').value;
+                const duration = this.getAnimationDuration();
+
+                const colorScale = d3.scaleSequential()
+                    .domain([0, 100])
+                    .interpolator(this.getColorScale(scheme));
+
+                // Update cell colors
+                d3.selectAll('.cell')
+                    .transition()
+                    .duration(duration)
+                    .attr('fill', d => colorScale(d.normalizedValue));
+
+                // Update text colors
+                d3.selectAll('.cell-text')
+                    .transition()
+                    .duration(duration)
+                    .style('fill', d => d.normalizedValue > 50 ? 'white' : '#333');
+
+                // Update legend gradient
+                const gradient = d3.select('#legend-gradient');
+                gradient.selectAll('stop').remove();
+
+                gradient.selectAll('stop')
+                    .data(d3.range(0, 1.01, 0.01))
+                    .join('stop')
+                    .attr('offset', d => (d * 100) + '%')
+                    .attr('stop-color', d => colorScale(d * 100));
+            }
+
+            /**
+             * Add axes to the heatmap
+             */
+            addAxes(g, xScale, yScale, metrics, continents) {
+                // X axis
+                g.append('g')
+                    .selectAll('.x-label')
+                    .data(metrics)
+                    .join('text')
+                    .attr('class', 'axis-label')
+                    .attr('x', d => xScale(d) + xScale.bandwidth() / 2)
+                    .attr('y', -40)
+                    .attr('text-anchor', 'end')
+                    .attr('transform', d =>
+                        `rotate(-35, ${xScale(d) + xScale.bandwidth() / 2}, -40)`)
+                    .text(d => d);
+
+                // Y axis
+                g.append('g')
+                    .selectAll('.y-label')
+                    .data(continents)
+                    .join('text')
+                    .attr('class', 'axis-label')
+                    .attr('x', -15)
+                    .attr('y', d => yScale(d) + yScale.bandwidth() / 2)
+                    .attr('text-anchor', 'end')
+                    .attr('dominant-baseline', 'middle')
+                    .text(d => d);
+            }
+
+            /**
+             * Add color legend
+             */
+            addLegend(svg, width, height, margin, colorScale) {
+                const legendWidth = 300;
+                const legendHeight = 20;
+
+                const legend = svg.append('g')
+                    .attr('class', 'legend')
+                    .attr('transform',
+                        `translate(${width - legendWidth - margin.right + 20},${height - 40})`);
+
+                const legendScale = d3.scaleLinear()
+                    .domain([0, 100])
+                    .range([0, legendWidth]);
+
+                const gradient = svg.append('defs')
+                    .append('linearGradient')
+                    .attr('id', 'legend-gradient');
+
+                gradient.selectAll('stop')
+                    .data(d3.range(0, 1.01, 0.01))
+                    .join('stop')
+                    .attr('offset', d => (d * 100) + '%')
+                    .attr('stop-color', d => colorScale(d * 100));
+
+                legend.append('rect')
+                    .attr('width', legendWidth)
+                    .attr('height', legendHeight)
+                    .style('fill', 'url(#legend-gradient)')
+                    .style('stroke', '#ccc')
+                    .style('stroke-width', 2)
+                    .attr('rx', 4);
+
+                legend.append('g')
+                    .attr('transform', `translate(0,${legendHeight})`)
+                    .call(d3.axisBottom(legendScale).ticks(5));
+
+                legend.append('text')
+                    .attr('x', legendWidth / 2)
+                    .attr('y', -8)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '13px')
+                    .style('font-weight', '600')
+                    .text('Color Intensity (Normalized per metric)');
+            }
+
+            /**
+             * Show tooltip
+             */
+            showTooltip(event, d) {
+                this.tooltip.transition()
+                    .duration(200)
+                    .style('opacity', 1);
+
+                this.tooltip.html(`
+                    <div class="tooltip-title">${d.continent} - ${d.metric}</div>
+                    <div><strong>Value:</strong> ${this.formatValue(d.metric, d.rawValue)}</div>
+                    <div><strong>Normalized:</strong> ${d.normalizedValue.toFixed(1)}/100</div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <em>Click for details</em>
+                    </div>
+                `)
+                    .style('left', (event.pageX + 15) + 'px')
+                    .style('top', (event.pageY - 15) + 'px');
+            }
+
+            /**
+             * Hide tooltip
+             */
+            hideTooltip() {
+                this.tooltip.transition()
+                    .duration(500)
+                    .style('opacity', 0);
+            }
+
+            /**
+             * Handle cell click
+             */
+            cellClicked(d) {
+                console.log('Cell clicked:', d);
+                alert(`${d.continent} - ${d.metric}\n\nRaw Value: ${this.formatValue(d.metric, d.rawValue)}\nNormalized Score: ${d.normalizedValue.toFixed(1)}/100`);
+            }
+
+            /**
+             * Format values for display
+             */
+            formatValue(metric, value) {
+                if (metric === 'Total Countries') {
+                    return Math.round(value) + ' countries';
+                } else if (metric.includes('Coverage') || metric === 'Data Completeness') {
+                    return value.toFixed(1) + '%';
+                } else if (metric === 'Avg Languages' || metric === 'Language Diversity') {
+                    return value.toFixed(2) + ' languages';
+                }
+                return value.toFixed(2);
+            }
+
+            /**
+             * Format cell values (shorter)
+             */
+            formatCellValue(metric, value) {
+                if (metric === 'Total Countries') {
+                    return Math.round(value);
+                } else if (metric.includes('Coverage') || metric === 'Data Completeness') {
+                    return value.toFixed(0) + '%';
+                } else if (metric === 'Avg Languages' || metric === 'Language Diversity') {
+                    return value.toFixed(1);
+                }
+                return value.toFixed(1);
+            }
+        }
+
+        // ============================================
+        // INITIALIZE APPLICATION
+        // ============================================
+        const graphQLClient = new GraphQLClient('https://countries.trevorblades.com/');
+        const dataProcessor = new DataProcessor();
+        const statsPanel = new StatsPanel();
+        const heatmapViz = new HeatmapVisualization();
+
+        // Store reference globally for debugging
+        window.graphQLClient = graphQLClient;
+        window.heatmapViz = heatmapViz;
+
+        console.log('🚀 Advanced Heatmap Application Initialized');
+        console.log('Technologies: GraphQL Client, D3.js v7, ES6 Classes, Async/Await');
+    </script>
+</body>
+
+</html>
