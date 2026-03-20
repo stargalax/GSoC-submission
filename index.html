@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Data Density Heatmap - GraphQL + D3.js</title>
+    <title>(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧Advanced Data Density Heatmap - GraphQL + D3.js</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         * {
@@ -347,7 +347,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>🚀 Advanced Data Density Heatmap</h1>
+            <h1>Advanced Data Density Heatmap</h1>
         </header>
 
         <div class="controls">
@@ -376,14 +376,14 @@
             <div class="control-group">
                 <label>&nbsp;</label>
                 <button onclick="graphQLClient.fetchAndVisualize()" id="analyzeBtn">
-                    🚀 Fetch & Analyze Data
+                    ✍️(◔◡◔)Fetch & Analyze Data
                 </button>
             </div>
 
             <div class="control-group">
                 <label>&nbsp;</label>
                 <button onclick="heatmapViz.updateColors()" id="updateBtn" disabled>
-                    🎨 Update Visualization
+                    Update Visualization
                 </button>
             </div>
         </div>
@@ -392,13 +392,13 @@
 
         <div id="visualization">
             <div class="loading">
-                <div style="font-size: 4em; margin-bottom: 20px;">🌍</div>
+                <div style="font-size: 4em; margin-bottom: 20px;">👈(ﾟヮﾟ👈)</div>
                 <div>Click "Fetch & Analyze Data" to query the GraphQL API</div>
             </div>
         </div>
 
         <div class="code-panel">
-            <h3>📝 GraphQL Query Being Executed:</h3>
+            <h3>GraphQL Query Being Executed:</h3>
             <pre><code><span class="keyword">query</span> <span class="function">GetContinentalData</span> {
   continents {
     name
@@ -425,7 +425,7 @@
         </div>
 
         <div class="tech-stack">
-            <h3>🛠️ Technologies Demonstrated</h3>
+            <h3>Technologies Demonstrated</h3>
             <div class="tech-badges">
                 <span class="badge">GraphQL Client</span>
                 <span class="badge">D3.js v7</span>
@@ -540,7 +540,7 @@
                 const updateBtn = document.getElementById('updateBtn');
 
                 btn.disabled = true;
-                btn.textContent = '🔄 Querying GraphQL API...';
+                btn.textContent = 'Querying GraphQL API...';
 
                 document.getElementById('visualization').innerHTML =
                     '<div class="loading"><div class="spinner"></div><div>Executing GraphQL query...</div></div>';
@@ -567,23 +567,23 @@
                     this.logAPI('info', 'Rendering D3.js heatmap...');
                     heatmapViz.create(processedData);
 
-                    this.logAPI('success', `✅ Complete! Analyzed ${result.data.continents.reduce((sum, c) => sum + c.countries.length, 0)} countries`);
+                    this.logAPI('success', `Complete! Analyzed ${result.data.continents.reduce((sum, c) => sum + c.countries.length, 0)} countries`);
 
-                    btn.textContent = '✅ Data Loaded';
+                    btn.textContent = ' Data Loaded';
                     updateBtn.disabled = false;
 
                 } catch (error) {
                     console.error('Error:', error);
-                    this.logAPI('error', `❌ ${error.message}`);
+                    this.logAPI('error', `${error.message}`);
 
                     document.getElementById('visualization').innerHTML =
                         `<div class="loading" style="color: #dc3545;">
-                            <div style="font-size: 3em; margin-bottom: 20px;">❌</div>
+                            <div style="font-size: 3em; margin-bottom: 20px;">┻━┻ ︵ ＼( °□° )／ ︵ ┻━┻</div>
                             <div><strong>Error:</strong> ${error.message}</div>
                         </div>`;
 
                     btn.disabled = false;
-                    btn.textContent = '🔄 Try Again';
+                    btn.textContent = ' Try Again';
                 }
             }
 
@@ -1129,7 +1129,7 @@
         window.graphQLClient = graphQLClient;
         window.heatmapViz = heatmapViz;
 
-        console.log('🚀 Advanced Heatmap Application Initialized');
+        console.log('Advanced Heatmap Application Initialized');
         console.log('Technologies: GraphQL Client, D3.js v7, ES6 Classes, Async/Await');
     </script>
 </body>
